@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy Node.js API to Azure Web App - dice-roller-api
+name: Build and deploy Node.js app to Azure Web App - node-js-on-azure-azure-dice-roller
 
 on:
   push:
@@ -11,51 +11,43 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
-      contents: read
+      contents: read #This is required for actions/checkout
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # ✅ Move into the server folder where package.json actually exists
-      - name: Install Node.js
+      - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
           node-version: '20.x'
-          cache: 'npm'
-          cache-dependency-path: server/package-lock.json
 
-      - name: Install dependencies
+      - name: npm install, build, and test
         run: |
-          cd server
           npm install
-
-      - name: Build (optional)
-        run: |
-          cd server
           npm run build --if-present
-
-      - name: Upload artifact
+          npm run test --if-present
+      
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
-          name: dice-api
-          path: server   # ✅ Upload ONLY the server folder
+          name: node-app
+          path: .
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write
-      contents: read
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
-      - name: Download artifact
+      - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: dice-api
-
+          name: node-app
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -63,9 +55,11 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A7B63057273C4905BE16D4AE7AAED1D8 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A1158CBEE9004367AF5B3925354F66EB }}
 
-      - name: Deploy to Azure Web App
+      - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
+        id: deploy-to-webapp
         with:
           app-name: 'node-js-on-azure-azure-dice-roller'
           slot-name: 'Production'
-          package: .   # ✅ Deploy the downloaded /server folder only
+          package: .
+          
