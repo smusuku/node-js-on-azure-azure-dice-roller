@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dice API Smoke Tests</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+        }
+        button {
+            padding: 8px 14px;
+            margin: 5px;
+        }
+        pre {
+            background: #f2f2f2;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        input {
+            width: 60px;
+            margin-left: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Dice API Smoke Tests</h1>
+
+    <!-- Ping -->
+    <button onclick="ping()">/api/ping</button>
+
+    <!-- Roll -->
+    <div>
+        Sides: <input id="sides" type="number" value="6" min="2">
+        Count: <input id="count" type="number" value="2" min="1" max="1000">
+    </div>
+    <button onclick="roll()">/api/roll (CORS allowed)</button>
+    <button onclick="rollNoCors()">/api/roll-nocors (CORS should fail)</button>
+
+    <pre id="out"></pre>
+
+    <script>
+        function show(result) {
+            document.getElementById('out').textContent = result;
+        }
+
+        // ✅ /api/ping
+        async function ping() {
+            const res = await fetch('/api/ping');
+            show(JSON.stringify(await res.json(), null, 2));
+        }
+
+        // ✅ /api/roll — CORS allowed
+        async function roll() {
+            const s = document.getElementById('sides').value;
+            const c = document.getElementById('count').value;
+
+            const res = await fetch(`/api/roll?sides=${s}&count=${c}`);
+            show(JSON.stringify(await res.json(), null, 2));
+        }
+
+        // ✅ /api/roll-nocors — CORS blocked
+        async function rollNoCors() {
+            const s = document.getElementById('sides').value;
+            const c = document.getElementById('count').value;
+
+            try {
+                const res = await fetch(`/api/roll-nocors?sides=${s}&count=${c}`);
+                show(JSON.stringify(await res.json(), null, 2));
+            } catch (e) {
+                show("Expected CORS failure:\n" + e);
+            }
+        }
+    </script>
+
+</body>
+</html>

@@ -39,6 +39,19 @@ const server = http.createServer((req, res) => {
             cors: "absent"
         }));
     }
+    var fs = require("fs");
+    var path = require("path");
+    if (parsed.pathname === "/" || parsed.pathname === "/index.html") {
+        const filePath = path.join(__dirname, "index.html");
+        fs.readFile(filePath, (err, data) => {
+            if (err) {
+                res.writeHead(500, { "Content-Type": "text/plain" });
+                return res.end("Error loading index.html");
+            }
+            res.writeHead(200, { "Content-Type": "text/html" });
+            return res.end(data);
+        });
+    }
 
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Not found" }));
